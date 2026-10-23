@@ -1,47 +1,140 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/constants/categories.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../data/models/transaction.dart';
+import '../application/transactions_provider.dart';
+import 'add_transaction_screen.dart';
+import 'widgets/summary_card.dart';
 
-final _dummy = [
-  AppTransaction(id: 1, amount: 85000, type: TransactionType.income, category: 'Salary', note: 'Internship allowance', date: DateTime.now()),
-  AppTransaction(id: 2, amount: 1200, type: TransactionType.expense, category: 'Food', note: 'Lunch', date: DateTime.now()),
-  AppTransaction(id: 3, amount: 450, type: TransactionType.expense, category: 'Transport', note: 'Bus fare', date: DateTime.now()),
-];
-
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final fmt = NumberFormat.currency(symbol: 'LKR ', decimalDigits: 2);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final txs = ref.watch(transactionsProvider);
+    final summary = ref.watch(summaryProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Spendly')),
-      body: ListView.separated(
-        itemCount: _dummy.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
-        itemBuilder: (context, i) {
-          final t = _dummy[i];
-          final isIncome = t.type == TransactionType.income;
-          return ListTile(
-            leading: CircleAvatar(
-              child: Icon(isIncome ? Icons.arrow_downward : Icons.arrow_upward),
+      body: Column(
+        children: [
+          SummaryCard(summary: summary),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Recent transactions',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
-            title: Text(t.category),
-            subtitle: Text(t.note),
-            trailing: Text(
-              '${isIncome ? '+' : '-'}${fmt.format(t.amount)}',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isIncome ? Colors.green : Colors.red,
+          ),
+          Expanded(
+            child: txs.isEmpty
+                ? const _EmptyState()
+                : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 96),
+                    itemCount: txs.length,
+                    itemBuilder: (context, i) => _TransactionTile(t: txs[i]),
+                  ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
+        ),
+        icon: const Icon(Icons.add),
+        label: const Text('Add'),
+      ),
+    );
+  }
+}
+
+class _TransactionTile extends ConsumerWidget {
+  const _TransactionTile({required this.t});
+  final AppTransaction t;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final isIncome = t.type == TransactionType.income;
+    final cat = findCategory(t.category);
+
+    return Dismissible(
+      key: ValueKey(t.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        color: scheme.errorContainer,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: Icon(Icons.delete, color: scheme.onErrorContainer),
+      ),
+      onDismissed: (_) {
+        ref.read(transactionsProvider.notifier).remove(t.id);
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              content: const Text('Transaction deleted'),
+              action: SnackBarAction(
+                label: 'Undo',
+                onPressed: () =>
+                    ref.read(transactionsProvider.notifier).add(t),
               ),
             ),
           );
-        },
+      },
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: isIncome
+              ? Colors.green.withValues(alpha: 0.15)
+              : scheme.primaryContainer,
+          child: Icon(
+            cat.icon,
+            color: isIncome ? Colors.green : scheme.onPrimaryContainer,
+          ),
+        ),
+        title: Text(t.category),
+        subtitle: Text(
+          t.note.isEmpty
+              ? DateFormat('d MMM').format(t.date)
+              : '${t.note} • ${DateFormat('d MMM').format(t.date)}',
+        ),
+        trailing: Text(
+          '${isIncome ? '+' : '-'}${currencyFmt.format(t.amount)}',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: isIncome ? Colors.green : scheme.error,
+          ),
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: const Icon(Icons.add),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.receipt_long, size: 64, color: scheme.outline),
+          const SizedBox(height: 12),
+          const Text('No transactions yet'),
+          const SizedBox(height: 4),
+          Text(
+            'Tap Add to record your first one',
+            style: TextStyle(color: scheme.outline),
+          ),
+        ],
       ),
     );
   }
