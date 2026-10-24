@@ -48,7 +48,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
     ref.read(transactionsProvider.notifier).add(
           AppTransaction(
-            id: DateTime.now().millisecondsSinceEpoch,
+            id: 0,  // the database assigns the real id
             amount: double.parse(_amountCtrl.text),
             type: _type,
             category: _category,

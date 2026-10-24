@@ -1,16 +1,41 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../data/database/app_database.dart';
 import '../../../data/models/transaction.dart';
+import '../../../data/repositories/drift_transaction_repository.dart';
+import '../../../data/repositories/transaction_repository.dart';
+
+final databaseProvider = Provider<AppDatabase>((ref) {
+  final db = AppDatabase();
+  ref.onDispose(db.close);
+  return db;
+});
+
+final transactionRepositoryProvider = Provider<TransactionRepository>(
+  (ref) => DriftTransactionRepository(ref.watch(databaseProvider)),
+);
 
 class TransactionsNotifier extends Notifier<List<AppTransaction>> {
-  @override
-  List<AppTransaction> build() => [];
+  TransactionRepository get _repo => ref.read(transactionRepositoryProvider);
 
-  void add(AppTransaction t) {
-    state = [t, ...state]..sort((a, b) => b.date.compareTo(a.date));
+  @override
+  List<AppTransaction> build() {
+    _load();
+    return [];
   }
 
-  void remove(int id) {
+  Future<void> _load() async {
+    state = await _repo.getAll();
+  }
+
+  Future<void> add(AppTransaction t) async {
+    await _repo.add(t);
+    await _load();
+  }
+
+  Future<void> remove(int id) async {
+    // Update the UI immediately, then delete from the database.
     state = state.where((t) => t.id != id).toList();
+    await _repo.remove(id);
   }
 }
 
