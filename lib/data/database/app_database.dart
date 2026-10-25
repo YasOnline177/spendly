@@ -13,7 +13,16 @@ class Transactions extends Table {
   DateTimeColumn get date => dateTime()();
 }
 
-@DriftDatabase(tables: [Transactions])
+@DataClassName('BudgetRow')
+class Budgets extends Table {
+  TextColumn get category => text()();
+  RealColumn get monthlyLimit => real()();
+
+  @override
+  Set<Column> get primaryKey => {category};
+}
+
+@DriftDatabase(tables: [Transactions, Budgets])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'spendly'));
 
@@ -21,5 +30,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(budgets);
+      }
+    },
+  );
 }
