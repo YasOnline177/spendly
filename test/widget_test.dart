@@ -5,6 +5,9 @@ import 'package:spendly_android/app.dart';
 import 'package:spendly_android/data/models/transaction.dart';
 import 'package:spendly_android/data/repositories/transaction_repository.dart';
 import 'package:spendly_android/features/transactions/application/transactions_provider.dart';
+import 'package:spendly_android/data/models/budget.dart';
+import 'package:spendly_android/data/repositories/budget_repository.dart';
+import 'package:spendly_android/features/budgets/application/budgets_provider.dart';
 
 class FakeTransactionRepository implements TransactionRepository {
   final _items = <AppTransaction>[];
@@ -33,13 +36,28 @@ class FakeTransactionRepository implements TransactionRepository {
   Future<void> remove(int id) async => _items.removeWhere((t) => t.id == id);
 }
 
+class FakeBudgetRepository implements BudgetRepository {
+  final _items = <String, Budget>{};
+
+  @override
+  Future<List<Budget>> getAll() async => _items.values.toList();
+
+  @override
+  Future<void> upsert(Budget budget) async => _items[budget.category] = budget;
+
+  @override
+  Future<void> remove(String category) async => _items.remove(category);
+}
+
 void main() {
   testWidgets('add a transaction and see it in the list', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          transactionRepositoryProvider
-              .overrideWithValue(FakeTransactionRepository()),
+          transactionRepositoryProvider.overrideWithValue(
+            FakeTransactionRepository(),
+          ),
+          budgetRepositoryProvider.overrideWithValue(FakeBudgetRepository()),
         ],
         child: const SpendlyApp(),
       ),

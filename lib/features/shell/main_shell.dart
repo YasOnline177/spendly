@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../reports/presentation/reports_screen.dart';
 import '../transactions/presentation/home_screen.dart';
+import '../budgets/presentation/budget_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -17,7 +19,7 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: const [HomeScreen(), ReportsScreen()],
+        children: const [HomeScreen(), BudgetsScreen(), ReportsScreen()],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
@@ -27,6 +29,11 @@ class _MainShellState extends State<MainShell> {
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.savings_outlined),
+            selectedIcon: Icon(Icons.savings),
+            label: 'Budgets',
           ),
           NavigationDestination(
             icon: Icon(Icons.pie_chart_outline),
