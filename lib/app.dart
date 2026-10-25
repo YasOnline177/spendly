@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
-import 'features/transactions/presentation/home_screen.dart';
-
+import 'features/shell/main_shell.dart';
 class SpendlyApp extends StatelessWidget {
   const SpendlyApp({super.key});
 
@@ -13,7 +12,7 @@ class SpendlyApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      home: const HomeScreen(),
+      home: const MainShell(),
     );
   }
 }
