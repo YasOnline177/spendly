@@ -33,6 +33,7 @@ class BudgetsScreen extends ConsumerWidget {
               ],
             ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'set_budget_fab',
         onPressed: () => showBudgetSheet(context),
         icon: const Icon(Icons.add),
         label: const Text('Set budget'),

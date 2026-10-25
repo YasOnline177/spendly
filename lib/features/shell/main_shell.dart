@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../reports/presentation/reports_screen.dart';
 import '../transactions/presentation/home_screen.dart';
-import '../budgets/presentation/budget_screen.dart';
+import '../budgets/presentation/budgets_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
