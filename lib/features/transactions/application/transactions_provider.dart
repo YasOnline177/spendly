@@ -14,33 +14,28 @@ final transactionRepositoryProvider = Provider<TransactionRepository>(
   (ref) => DriftTransactionRepository(ref.watch(databaseProvider)),
 );
 
-class TransactionsNotifier extends Notifier<List<AppTransaction>> {
+class TransactionsNotifier extends AsyncNotifier<List<AppTransaction>> {
   TransactionRepository get _repo => ref.read(transactionRepositoryProvider);
 
   @override
-  List<AppTransaction> build() {
-    _load();
-    return [];
-  }
+  Future<List<AppTransaction>> build() => _repo.getAll();
 
-  Future<void> _load() async {
-    state = await _repo.getAll();
-  }
-
+  /// Adds a new transaction (id 0) or replaces an existing one (real id).
   Future<void> add(AppTransaction t) async {
     await _repo.add(t);
-    await _load();
+    state = AsyncData(await _repo.getAll());
   }
 
   Future<void> remove(int id) async {
     // Update the UI immediately, then delete from the database.
-    state = state.where((t) => t.id != id).toList();
+    final current = state.value ?? [];
+    state = AsyncData(current.where((t) => t.id != id).toList());
     await _repo.remove(id);
   }
 }
 
 final transactionsProvider =
-    NotifierProvider<TransactionsNotifier, List<AppTransaction>>(
+    AsyncNotifierProvider<TransactionsNotifier, List<AppTransaction>>(
   TransactionsNotifier.new,
 );
 
@@ -52,7 +47,7 @@ class Summary {
 }
 
 final summaryProvider = Provider<Summary>((ref) {
-  final txs = ref.watch(transactionsProvider);
+  final txs = ref.watch(transactionsProvider).value ?? [];
   double income = 0;
   double expense = 0;
   for (final t in txs) {

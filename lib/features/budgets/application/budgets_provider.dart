@@ -39,7 +39,7 @@ final budgetsProvider = NotifierProvider<BudgetsNotifier, List<Budget>>(
 
 final budgetProgressProvider = Provider<List<BudgetProgress>>((ref) {
   final budgets = ref.watch(budgetsProvider);
-  final txs = ref.watch(transactionsProvider);
+  final txs = ref.watch(transactionsProvider).value ?? [];
   final now = DateTime.now();
   return budgetProgress(budgets, txs, DateTime(now.year, now.month));
 });

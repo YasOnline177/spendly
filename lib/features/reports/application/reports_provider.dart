@@ -26,12 +26,12 @@ final selectedMonthProvider =
 );
 
 final categoryTotalsProvider = Provider<Map<String, double>>((ref) {
-  final txs = ref.watch(transactionsProvider);
+  final txs = ref.watch(transactionsProvider).value ?? [];
   final month = ref.watch(selectedMonthProvider);
   return expenseByCategory(txs, month);
 });
 
 final monthlyTotalsProvider = Provider<List<MonthTotal>>((ref) {
-  final txs = ref.watch(transactionsProvider);
+  final txs = ref.watch(transactionsProvider).value ?? [];
   return lastMonths(txs, DateTime.now());
 });

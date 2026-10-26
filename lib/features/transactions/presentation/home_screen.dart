@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/transaction.dart';
@@ -13,7 +14,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final txs = ref.watch(transactionsProvider);
+    final txsAsync = ref.watch(transactionsProvider);
     final summary = ref.watch(summaryProvider);
 
     return Scaffold(
@@ -32,13 +33,17 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: txs.isEmpty
-                ? const _EmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 96),
-                    itemCount: txs.length,
-                    itemBuilder: (context, i) => _TransactionTile(t: txs[i]),
-                  ),
+            child: txsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Something went wrong: $e')),
+              data: (txs) => txs.isEmpty
+                  ? const _EmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 96),
+                      itemCount: txs.length,
+                      itemBuilder: (context, i) => _TransactionTile(t: txs[i]),
+                    ),
+            ),
           ),
         ],
       ),
@@ -83,8 +88,7 @@ class _TransactionTile extends ConsumerWidget {
               content: const Text('Transaction deleted'),
               action: SnackBarAction(
                 label: 'Undo',
-                onPressed: () =>
-                    ref.read(transactionsProvider.notifier).add(t),
+                onPressed: () => ref.read(transactionsProvider.notifier).add(t),
               ),
             ),
           );
