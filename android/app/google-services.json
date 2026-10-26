@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "451709618906",
+    "project_id": "spendly-e6a62",
+    "storage_bucket": "spendly-e6a62.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:451709618906:android:393118278359e75f93f3e3",
+        "android_client_info": {
+          "package_name": "com.example.spendly_android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUpBouU4Z71iBC-6osMeCLgHIce3rSzbE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
