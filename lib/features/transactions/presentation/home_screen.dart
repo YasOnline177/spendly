@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/transaction.dart';
+import '../../auth/application/auth_provider.dart';
 import '../application/transactions_provider.dart';
 import 'add_transaction_screen.dart';
 import 'widgets/summary_card.dart';
@@ -18,7 +19,16 @@ class HomeScreen extends ConsumerWidget {
     final summary = ref.watch(summaryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Spendly')),
+      appBar: AppBar(
+        title: const Text('Spendly'),
+        actions: [
+          IconButton(
+            tooltip: 'Sign out',
+            icon: const Icon(Icons.logout),
+            onPressed: () => _confirmSignOut(context, ref),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           SummaryCard(summary: summary),
@@ -148,5 +158,29 @@ class _EmptyState extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Sign out?'),
+      content: const Text('You can sign back in anytime.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Sign out'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true) {
+    await ref.read(authRepositoryProvider).signOut();
   }
 }

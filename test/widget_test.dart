@@ -8,6 +8,9 @@ import 'package:spendly_android/features/transactions/application/transactions_p
 import 'package:spendly_android/data/models/budget.dart';
 import 'package:spendly_android/data/repositories/budget_repository.dart';
 import 'package:spendly_android/features/budgets/application/budgets_provider.dart';
+import 'package:spendly_android/data/models/app_user.dart';
+import 'package:spendly_android/features/auth/application/auth_provider.dart';
+import 'helpers/fake_auth_repository.dart';
 
 class FakeTransactionRepository implements TransactionRepository {
   final _items = <AppTransaction>[];
@@ -58,6 +61,11 @@ void main() {
             FakeTransactionRepository(),
           ),
           budgetRepositoryProvider.overrideWithValue(FakeBudgetRepository()),
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(
+              user: const AppUser(uid: 'test', email: 'test@example.com'),
+            ),
+          ),
         ],
         child: const SpendlyApp(),
       ),

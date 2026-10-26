@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
-import 'features/shell/main_shell.dart';
+import 'features/auth/presentation/auth_gate.dart';
 class SpendlyApp extends StatelessWidget {
   const SpendlyApp({super.key});
 
@@ -12,7 +12,7 @@ class SpendlyApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      home: const MainShell(),
+      home: const AuthGate(),
     );
   }
 }
