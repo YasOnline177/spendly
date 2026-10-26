@@ -94,6 +94,12 @@ class _TransactionTile extends ConsumerWidget {
           );
       },
       child: ListTile(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AddTransactionScreen(existing: t),
+          ),
+        ),
         leading: CircleAvatar(
           backgroundColor: isIncome
               ? Colors.green.withValues(alpha: 0.15)

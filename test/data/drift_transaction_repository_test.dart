@@ -54,4 +54,25 @@ void main() {
     final restored = await repo.getAll();
     expect(restored.single.id, saved.id);
   });
+
+  test('add with an existing id replaces that row (edit)', () async {
+    await repo.add(_tx(category: 'Food'));
+    final saved = (await repo.getAll()).single;
+
+    await repo.add(
+      AppTransaction(
+        id: saved.id,
+        amount: 2500,
+        type: saved.type,
+        category: 'Bills',
+        note: 'edited',
+        date: saved.date,
+      ),
+    );
+
+    final all = await repo.getAll();
+    expect(all, hasLength(1));
+    expect(all.single.category, 'Bills');
+    expect(all.single.amount, 2500);
+  });
 }

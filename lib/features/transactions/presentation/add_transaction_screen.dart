@@ -7,7 +7,10 @@ import '../../../data/models/transaction.dart';
 import '../application/transactions_provider.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
-  const AddTransactionScreen({super.key});
+  const AddTransactionScreen({super.key, this.existing});
+
+  /// When set, the screen edits this transaction instead of creating one.
+  final AppTransaction? existing;
 
   @override
   ConsumerState<AddTransactionScreen> createState() =>
@@ -16,15 +19,29 @@ class AddTransactionScreen extends ConsumerStatefulWidget {
 
 class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _amountCtrl = TextEditingController();
-  final _noteCtrl = TextEditingController();
+  late final TextEditingController _amountCtrl;
+  late final TextEditingController _noteCtrl;
+  late TransactionType _type;
+  late String _category;
+  late DateTime _date;
 
-  TransactionType _type = TransactionType.expense;
-  String _category = expenseCategories.first.name;
-  DateTime _date = DateTime.now();
+  bool get _isEditing => widget.existing != null;
 
   List<CategoryInfo> get _categories =>
       _type == TransactionType.expense ? expenseCategories : incomeCategories;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    _type = e?.type ?? TransactionType.expense;
+    _category = e?.category ?? expenseCategories.first.name;
+    _date = e?.date ?? DateTime.now();
+    _amountCtrl = TextEditingController(
+      text: e == null ? '' : e.amount.toStringAsFixed(2),
+    );
+    _noteCtrl = TextEditingController(text: e?.note ?? '');
+  }
 
   @override
   void dispose() {
@@ -48,7 +65,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
     ref.read(transactionsProvider.notifier).add(
           AppTransaction(
-            id: 0,  // the database assigns the real id
+            id: widget.existing?.id ?? 0, // 0 = new, the database assigns an id
             amount: double.parse(_amountCtrl.text),
             type: _type,
             category: _category,
@@ -62,7 +79,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add transaction')),
+      appBar: AppBar(
+        title: Text(_isEditing ? 'Edit transaction' : 'Add transaction'),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -142,9 +161,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _save,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 14),
-                child: Text('Save transaction'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Text(_isEditing ? 'Save changes' : 'Save transaction'),
               ),
             ),
           ],
