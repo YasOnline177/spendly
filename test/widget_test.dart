@@ -63,7 +63,7 @@ void main() {
           budgetRepositoryProvider.overrideWithValue(FakeBudgetRepository()),
           authRepositoryProvider.overrideWithValue(
             FakeAuthRepository(
-              user: const AppUser(uid: 'test', email: 'test@example.com'),
+              user: const AppUser(uid: 'test', email: 'test@example.com', emailVerified: true),
             ),
           ),
         ],

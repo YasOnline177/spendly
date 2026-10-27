@@ -49,7 +49,7 @@ class FirebaseAuthRepository implements AuthRepository {
     }
   }
 
-    @override
+  @override
   Future<void> sendEmailVerification() {
     return _guard(() async {
       await _auth.currentUser?.sendEmailVerification();
