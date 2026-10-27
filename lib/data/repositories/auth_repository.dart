@@ -6,6 +6,8 @@ abstract class AuthRepository {
   Future<void> signUp({required String email, required String password});
   Future<void> sendPasswordReset(String email);
   Future<void> signOut();
+  Future<void> sendEmailVerification();
+  Future<bool> refreshEmailVerified();
 }
 
 /// A user-friendly auth error, safe to show on screen.

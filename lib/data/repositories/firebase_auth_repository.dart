@@ -11,7 +11,7 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Stream<AppUser?> authStateChanges() {
     return _auth.authStateChanges().map(
-          (u) => u == null ? null : AppUser(uid: u.uid, email: u.email),
+          (u) => u == null ? null : AppUser(uid: u.uid, email: u.email, emailVerified: u.emailVerified),
         );
   }
 
@@ -24,12 +24,13 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signUp({required String email, required String password}) {
-    return _guard(
-      () => _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      ),
-    );
+    return _guard(() async {
+      final cred = await _auth.createUserWithEmailAndPassword(
+        email: email, 
+        password: password
+      );
+      await cred.user?.sendEmailVerification();
+    });
   }
 
   @override
@@ -46,6 +47,23 @@ class FirebaseAuthRepository implements AuthRepository {
     } on FirebaseAuthException catch (e) {
       throw AuthFailure(_message(e.code));
     }
+  }
+
+    @override
+  Future<void> sendEmailVerification() {
+    return _guard(() async {
+      await _auth.currentUser?.sendEmailVerification();
+    });
+  }
+
+  @override
+  Future<bool> refreshEmailVerified() async {
+    try {
+      await _auth.currentUser?.reload();
+    } on FirebaseAuthException catch (e) {
+      throw AuthFailure(_message(e.code));
+    }
+    return _auth.currentUser?.emailVerified ?? false;
   }
 
   String _message(String code) {
