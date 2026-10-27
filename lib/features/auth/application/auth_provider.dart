@@ -11,3 +11,7 @@ final authRepositoryProvider = Provider<AuthRepository>(
 final authStateProvider = StreamProvider<AppUser?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges();
 });
+
+final currentUserIdProvider = Provider<String?>(
+  (ref) => ref.watch(authStateProvider.select((s) => s.value?.uid)),
+);

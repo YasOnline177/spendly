@@ -3,9 +3,11 @@ import '../../../data/database/app_database.dart';
 import '../../../data/models/transaction.dart';
 import '../../../data/repositories/drift_transaction_repository.dart';
 import '../../../data/repositories/transaction_repository.dart';
+import '../../auth/application/auth_provider.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase();
+  final uid = ref.watch(currentUserIdProvider);
+  final db = AppDatabase(userId: uid ?? 'guest');
   ref.onDispose(db.close);
   return db;
 });
@@ -18,7 +20,9 @@ class TransactionsNotifier extends AsyncNotifier<List<AppTransaction>> {
   TransactionRepository get _repo => ref.read(transactionRepositoryProvider);
 
   @override
-  Future<List<AppTransaction>> build() => _repo.getAll();
+  Future<List<AppTransaction>> build() {
+    return ref.watch(transactionRepositoryProvider).getAll();
+  }
 
   /// Adds a new transaction (id 0) or replaces an existing one (real id).
   Future<void> add(AppTransaction t) async {

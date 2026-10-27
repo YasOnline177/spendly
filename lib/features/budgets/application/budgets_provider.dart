@@ -14,6 +14,7 @@ class BudgetsNotifier extends Notifier<List<Budget>> {
 
   @override
   List<Budget> build() {
+    ref.watch(budgetRepositoryProvider);
     _load();
     return [];
   }

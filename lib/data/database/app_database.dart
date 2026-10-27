@@ -24,7 +24,8 @@ class Budgets extends Table {
 
 @DriftDatabase(tables: [Transactions, Budgets])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(driftDatabase(name: 'spendly'));
+  AppDatabase({String userId = 'guest'})
+    : super(driftDatabase(name: 'spendly_$userId'));
 
   // Used in tests with an in-memory database.
   AppDatabase.forTesting(super.e);
