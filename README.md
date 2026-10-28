@@ -14,13 +14,13 @@ Track income and expenses, set monthly budgets per category, and see where your 
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/login.png" width="200" alt="Login"><br><sub>Sign in</sub></td>
-    <td align="center"><img src="docs/screenshots/home.png" width="200" alt="Home"><br><sub>Balance &amp; transactions</sub></td>
-    <td align="center"><img src="docs/screenshots/add-transaction.png" width="200" alt="Add transaction"><br><sub>Add transaction</sub></td>
+    <td align="center"><img src="docs/screenshots/login.jpeg" width="200" alt="Login"><br><sub>Sign in</sub></td>
+    <td align="center"><img src="docs/screenshots/home.jpeg" width="200" alt="Home"><br><sub>Balance &amp; transactions</sub></td>
+    <td align="center"><img src="docs/screenshots/add-transaction.jpeg" width="200" alt="Add transaction"><br><sub>Add transaction</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/budgets.png" width="200" alt="Budgets"><br><sub>Monthly budgets</sub></td>
-    <td align="center"><img src="docs/screenshots/reports.png" width="200" alt="Reports"><br><sub>Reports</sub></td>
+    <td align="center"><img src="docs/screenshots/budgets.jpeg" width="200" alt="Budgets"><br><sub>Monthly budgets</sub></td>
+    <td align="center"><img src="docs/screenshots/reports.jpeg" width="200" alt="Reports"><br><sub>Reports</sub></td>
     <td></td>
   </tr>
 </table>
