@@ -18,13 +18,18 @@ AppTransaction _tx({int id = 0, String category = 'Food', DateTime? date}) {
 void main() {
   late AppDatabase db;
   late DriftTransactionRepository repo;
+  late DateTime clock;
 
   setUp(() {
+    clock = DateTime(2026, 10, 1, 12);
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    repo = DriftTransactionRepository(db);
+    repo = DriftTransactionRepository(db, now: () => clock);
   });
 
   tearDown(() => db.close());
+
+  Future<TransactionRow> onlyRow() async =>
+      (await db.select(db.transactions).get()).single;
 
   test('add assigns an id and getAll returns the item', () async {
     await repo.add(_tx());
@@ -43,7 +48,8 @@ void main() {
     expect(all.map((t) => t.category), ['New', 'Old']);
   });
 
-  test('remove deletes and re-adding with the same id restores it', () async {
+  test('remove hides the row and re-adding with the same id restores it',
+      () async {
     await repo.add(_tx());
     final saved = (await repo.getAll()).first;
 
@@ -55,7 +61,7 @@ void main() {
     expect(restored.single.id, saved.id);
   });
 
-  test('add with an existing id replaces that row (edit)', () async {
+  test('add with an existing id edits that row', () async {
     await repo.add(_tx(category: 'Food'));
     final saved = (await repo.getAll()).single;
 
@@ -74,5 +80,54 @@ void main() {
     expect(all, hasLength(1));
     expect(all.single.category, 'Bills');
     expect(all.single.amount, 2500);
+  });
+
+  group('sync metadata', () {
+    test('a new row gets a sync id, timestamp and dirty flag', () async {
+      await repo.add(_tx());
+
+      final row = await onlyRow();
+      expect(row.syncId, isNotNull);
+      expect(row.syncId!.length, 36); // uuid v4
+      expect(row.updatedAt, clock.millisecondsSinceEpoch);
+      expect(row.dirty, isTrue);
+      expect(row.deleted, isFalse);
+    });
+
+    test('edit keeps the sync id and bumps updatedAt', () async {
+      await repo.add(_tx());
+      final before = await onlyRow();
+
+      clock = clock.add(const Duration(minutes: 5));
+      await repo.add(
+        AppTransaction(
+          id: before.id,
+          amount: 1,
+          type: TransactionType.expense,
+          category: 'Food',
+          note: '',
+          date: before.date,
+        ),
+      );
+
+      final after = await onlyRow();
+      expect(after.syncId, before.syncId);
+      expect(after.updatedAt, clock.millisecondsSinceEpoch);
+      expect(after.updatedAt, greaterThan(before.updatedAt));
+    });
+
+    test('remove is a soft delete that stays dirty for syncing', () async {
+      await repo.add(_tx());
+      final before = await onlyRow();
+
+      clock = clock.add(const Duration(minutes: 1));
+      await repo.remove(before.id);
+
+      final after = await onlyRow(); // the row is still there
+      expect(after.deleted, isTrue);
+      expect(after.dirty, isTrue);
+      expect(after.updatedAt, clock.millisecondsSinceEpoch);
+      expect(await repo.getAll(), isEmpty);
+    });
   });
 }
