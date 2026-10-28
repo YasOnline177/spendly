@@ -80,6 +80,8 @@ class _BudgetCard extends ConsumerWidget {
               ..showSnackBar(
                 SnackBar(
                   content: const Text('Budget deleted'),
+                  persist: false,
+                  duration: const Duration(seconds: 4),
                   action: SnackBarAction(
                     label: 'Undo',
                     onPressed: () => notifier.upsert(p.budget),

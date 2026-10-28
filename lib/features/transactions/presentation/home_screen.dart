@@ -96,6 +96,8 @@ class _TransactionTile extends ConsumerWidget {
           ..showSnackBar(
             SnackBar(
               content: const Text('Transaction deleted'),
+              persist: false,
+              duration: const Duration(seconds: 4),
               action: SnackBarAction(
                 label: 'Undo',
                 onPressed: () => ref.read(transactionsProvider.notifier).add(t),
