@@ -6,6 +6,7 @@ import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/transaction.dart';
 import '../../auth/application/auth_provider.dart';
+import '../../sync/application/sync_provider.dart';
 import '../application/transactions_provider.dart';
 import 'add_transaction_screen.dart';
 import 'widgets/summary_card.dart';
@@ -17,11 +18,29 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final txsAsync = ref.watch(transactionsProvider);
     final summary = ref.watch(summaryProvider);
+    final sync = ref.watch(syncControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Spendly'),
         actions: [
+          IconButton(
+            tooltip: 'Sync now',
+            onPressed: sync.status == SyncStatus.syncing
+                ? null
+                : () => _syncNow(context, ref),
+            icon: sync.status == SyncStatus.syncing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    sync.status == SyncStatus.error
+                        ? Icons.sync_problem
+                        : Icons.sync,
+                  ),
+          ),
           IconButton(
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout),
@@ -31,6 +50,7 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          const _SyncStatusLine(),
           SummaryCard(summary: summary),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
@@ -108,9 +128,7 @@ class _TransactionTile extends ConsumerWidget {
       child: ListTile(
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => AddTransactionScreen(existing: t),
-          ),
+          MaterialPageRoute(builder: (_) => AddTransactionScreen(existing: t)),
         ),
         leading: CircleAvatar(
           backgroundColor: isIncome
@@ -184,5 +202,55 @@ Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
 
   if (confirmed == true) {
     await ref.read(authRepositoryProvider).signOut();
+  }
+}
+
+Future<void> _syncNow(BuildContext context, WidgetRef ref) async {
+  await ref.read(syncControllerProvider.notifier).syncNow();
+  if (!context.mounted) return;
+
+  final s = ref.read(syncControllerProvider);
+  if (s.status == SyncStatus.error) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(s.error ?? 'Sync failed')));
+  }
+}
+
+class _SyncStatusLine extends ConsumerWidget {
+  const _SyncStatusLine();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(syncControllerProvider);
+    final scheme = Theme.of(context).colorScheme;
+
+    String? text;
+    var isError = false;
+    switch (s.status) {
+      case SyncStatus.syncing:
+        text = 'Syncing…';
+      case SyncStatus.error:
+        text = s.error ?? 'Sync failed';
+        isError = true;
+      case SyncStatus.idle:
+        if (s.lastSynced != null) {
+          text = 'Synced at ${DateFormat.Hm().format(s.lastSynced!)}';
+        }
+    }
+    if (text == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: isError ? scheme.error : scheme.outline,
+              ),
+        ),
+      ),
+    );
   }
 }
