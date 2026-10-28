@@ -1,18 +1,21 @@
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../models/app_user.dart';
 import 'auth_repository.dart';
 
 class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuthRepository([FirebaseAuth? auth])
-      : _auth = auth ?? FirebaseAuth.instance;
+    : _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseAuth _auth;
 
   @override
   Stream<AppUser?> authStateChanges() {
     return _auth.authStateChanges().map(
-          (u) => u == null ? null : AppUser(uid: u.uid, email: u.email, emailVerified: u.emailVerified),
-        );
+      (u) => u == null
+          ? null
+          : AppUser(uid: u.uid, email: u.email, emailVerified: u.emailVerified),
+    );
   }
 
   @override
@@ -26,8 +29,8 @@ class FirebaseAuthRepository implements AuthRepository {
   Future<void> signUp({required String email, required String password}) {
     return _guard(() async {
       final cred = await _auth.createUserWithEmailAndPassword(
-        email: email, 
-        password: password
+        email: email,
+        password: password,
       );
       await cred.user?.sendEmailVerification();
     });
@@ -60,10 +63,16 @@ class FirebaseAuthRepository implements AuthRepository {
   Future<bool> refreshEmailVerified() async {
     try {
       await _auth.currentUser?.reload();
+      final verified = _auth.currentUser?.emailVerified ?? false;
+      if (verified) {
+        // The email_verified claim is stored in the ID token. Force a refresh
+        // so Firestore security rules see it immediately.
+        await _auth.currentUser?.getIdToken(true);
+      }
+      return verified;
     } on FirebaseAuthException catch (e) {
       throw AuthFailure(_message(e.code));
     }
-    return _auth.currentUser?.emailVerified ?? false;
   }
 
   String _message(String code) {
