@@ -125,8 +125,8 @@ CI runs analyze and tests on every push and builds a release APK.
 **Prerequisites:** Flutter SDK, Android Studio (emulator or a device), a Google account for Firebase.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
-cd YOUR_REPO
+git clone https://github.com/YasOnline177/spendly.git
+cd spendly
 flutter pub get
 ```
 
