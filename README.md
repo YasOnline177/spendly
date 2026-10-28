@@ -153,6 +153,6 @@ If you change a Drift table, regenerate the database code with `dart run build_r
 
 ## Author
 
-**Yasara Samaraweera** · [Portfolio](https://yasara-samaraweera.vercel.app) · [LinkedIn](https://www.linkedin.com/in/YOUR_LINKEDIN) · [GitHub](https://github.com/YOUR_USERNAME)
+**Yasara Samaraweera** · [Portfolio](https://yasara-samaraweera.vercel.app) · [LinkedIn](https://www.linkedin.com/in/yasara-samaraweera-3a4341333) · [GitHub](https://github.com/YasOnline177)
 
 Built as a portfolio project while studying Computer Science.
