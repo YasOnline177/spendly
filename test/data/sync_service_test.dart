@@ -6,6 +6,7 @@ import 'package:spendly_android/data/models/transaction.dart';
 import 'package:spendly_android/data/repositories/drift_budget_repository.dart';
 import 'package:spendly_android/data/repositories/drift_transaction_repository.dart';
 import 'package:spendly_android/data/sync/sync_service.dart';
+import 'package:drift/drift.dart' show driftRuntimeOptions;
 
 import '../helpers/fake_remote_store.dart';
 
@@ -44,6 +45,7 @@ class _Device {
 }
 
 void main() {
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;  // each "device" has its own in-memory DB
   late FakeRemoteStore cloud;
   late _Device a;
   late _Device b;
