@@ -15,3 +15,9 @@ final authStateProvider = StreamProvider<AppUser?>((ref) {
 final currentUserIdProvider = Provider<String?>(
   (ref) => ref.watch(authStateProvider.select((s) => s.value?.uid)),
 );
+
+final emailVerifiedProvider = Provider<bool>(
+  (ref) => ref.watch(
+    authStateProvider.select((s) => s.value?.emailVerified ?? false),
+  ),
+);
