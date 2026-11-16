@@ -57,6 +57,7 @@ class FakeBudgetRepository implements BudgetRepository {
 }
 
 void main() {
+  WidgetController.hitTestWarningShouldBeFatal = true;
   testWidgets('add a transaction and see it in the list', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -91,9 +92,11 @@ void main() {
 
     await tester.enterText(find.byType(TextFormField).first, '1500');
     await tester.ensureVisible(find.text('Save transaction'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Save transaction'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Save transaction'), findsNothing); // the form closed
     expect(find.text('No transactions yet'), findsNothing);
     expect(find.text('Food'), findsOneWidget);
   });

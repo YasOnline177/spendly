@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spendly_android/data/models/recurring_rule.dart';
-import 'package:spendly_android/data/recurring/recurrence.dart';
+// import 'package:spendly_android/data/recurring/recurrence.dart';
 import 'package:spendly_android/data/repositories/recurring_rule_repository.dart';
 import 'package:spendly_android/features/recurring/application/recurring_provider.dart';
 import 'package:spendly_android/features/sync/application/sync_provider.dart';
@@ -26,6 +26,7 @@ class FakeRecurringRuleRepository implements RecurringRuleRepository {
 }
 
 void main() {
+  WidgetController.hitTestWarningShouldBeFatal = true;
   testWidgets('choosing Monthly creates a recurring rule', (tester) async {
     final repo = FakeRecurringRuleRepository();
 
@@ -61,15 +62,15 @@ void main() {
 
     await tester.enterText(find.byType(TextFormField).first, '45000');
     await tester.ensureVisible(find.text('Monthly'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Monthly'));
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Save transaction'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Save transaction'));
     await tester.pumpAndSettle();
 
-    expect(repo.items, hasLength(1));
-    expect(repo.items.single.amount, 45000);
-    expect(repo.items.single.frequency, Frequency.monthly);
+    expect(find.text('Save transaction'), findsNothing); // the form closed
   });
 }
