@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/transaction.dart';
 import '../../auth/application/auth_provider.dart';
 import '../../sync/application/sync_provider.dart';
+import '../application/transaction_filter_provider.dart';
 import '../application/transactions_provider.dart';
 import 'add_transaction_screen.dart';
+import 'widgets/filter_sheet.dart';
 import 'widgets/summary_card.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -16,7 +17,9 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final txsAsync = ref.watch(transactionsProvider);
+    final listAsync = ref.watch(filteredTransactionsProvider);
+    final total = ref.watch(transactionsProvider).value?.length ?? 0;
+    final shown = listAsync.value?.length ?? 0;
     final summary = ref.watch(summaryProvider);
     final sync = ref.watch(syncControllerProvider);
 
@@ -52,27 +55,34 @@ class HomeScreen extends ConsumerWidget {
         children: [
           const _SyncStatusLine(),
           SummaryCard(summary: summary),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Recent transactions',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ),
+          const _SearchRow(),
+          _ResultsHeader(shown: shown, total: total),
           Expanded(
-            child: txsAsync.when(
+            child: listAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(child: Text('Something went wrong: $e')),
-              data: (txs) => txs.isEmpty
-                  ? const _EmptyState()
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 96),
-                      itemCount: txs.length,
-                      itemBuilder: (context, i) => _TransactionTile(t: txs[i]),
-                    ),
+              data: (txs) {
+                if (txs.isEmpty) {
+                  return total == 0
+                      ? const _EmptyState(
+                          icon: Icons.receipt_long,
+                          title: 'No transactions yet',
+                          subtitle: 'Tap Add to record your first one',
+                        )
+                      : const _EmptyState(
+                          icon: Icons.search_off,
+                          title: 'No matching transactions',
+                          subtitle: 'Try a different search or clear the filters',
+                        );
+                }
+                return ListView.builder(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.only(bottom: 96),
+                  itemCount: txs.length,
+                  itemBuilder: (context, i) => _TransactionTile(t: txs[i]),
+                );
+              },
             ),
           ),
         ],
@@ -85,6 +95,122 @@ class HomeScreen extends ConsumerWidget {
         ),
         icon: const Icon(Icons.add),
         label: const Text('Add'),
+      ),
+    );
+  }
+}
+
+class _SearchRow extends ConsumerStatefulWidget {
+  const _SearchRow();
+
+  @override
+  ConsumerState<_SearchRow> createState() => _SearchRowState();
+}
+
+class _SearchRowState extends ConsumerState<_SearchRow> {
+  final _ctrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filter = ref.watch(transactionFilterProvider);
+    final scheme = Theme.of(context).colorScheme;
+
+    // Keep the text box in sync when "Clear all" resets the search elsewhere.
+    ref.listen(transactionFilterProvider, (prev, next) {
+      if (next.query.isEmpty && _ctrl.text.isNotEmpty) _ctrl.clear();
+    });
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _ctrl,
+              textInputAction: TextInputAction.search,
+              onChanged: (v) =>
+                  ref.read(transactionFilterProvider.notifier).setQuery(v),
+              decoration: InputDecoration(
+                hintText: 'Search category, note or amount',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: filter.query.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear search',
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          _ctrl.clear();
+                          ref
+                              .read(transactionFilterProvider.notifier)
+                              .setQuery('');
+                        },
+                      ),
+                filled: true,
+                fillColor: scheme.surfaceContainerHighest,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Badge(
+            smallSize: 10,
+            isLabelVisible: filter.hasSheetFilters,
+            child: IconButton.filledTonal(
+              tooltip: 'Filters and sorting',
+              icon: const Icon(Icons.tune),
+              onPressed: () => showTransactionFilterSheet(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResultsHeader extends ConsumerWidget {
+  const _ResultsHeader({required this.shown, required this.total});
+
+  final int shown;
+  final int total;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(transactionFilterProvider);
+    final textTheme = Theme.of(context).textTheme;
+
+    if (!filter.isActive) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text('Recent transactions', style: textTheme.titleMedium),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 12, 0),
+      child: Row(
+        children: [
+          Text('$shown of $total transactions', style: textTheme.titleSmall),
+          const Spacer(),
+          TextButton(
+            onPressed: () =>
+                ref.read(transactionFilterProvider.notifier).clear(),
+            child: const Text('Clear all'),
+          ),
+        ],
       ),
     );
   }
@@ -120,7 +246,8 @@ class _TransactionTile extends ConsumerWidget {
               duration: const Duration(seconds: 4),
               action: SnackBarAction(
                 label: 'Undo',
-                onPressed: () => ref.read(transactionsProvider.notifier).add(t),
+                onPressed: () =>
+                    ref.read(transactionsProvider.notifier).add(t),
               ),
             ),
           );
@@ -158,7 +285,15 @@ class _TransactionTile extends ConsumerWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  const _EmptyState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -167,14 +302,11 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.receipt_long, size: 64, color: scheme.outline),
+          Icon(icon, size: 64, color: scheme.outline),
           const SizedBox(height: 12),
-          const Text('No transactions yet'),
+          Text(title),
           const SizedBox(height: 4),
-          Text(
-            'Tap Add to record your first one',
-            style: TextStyle(color: scheme.outline),
-          ),
+          Text(subtitle, style: TextStyle(color: scheme.outline)),
         ],
       ),
     );
