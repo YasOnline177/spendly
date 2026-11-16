@@ -34,7 +34,26 @@ class Budgets extends Table {
   Set<Column> get primaryKey => {category};
 }
 
-@DriftDatabase(tables: [Transactions, Budgets])
+@DataClassName('RecurringRuleRow')
+class RecurringRules extends Table {
+  TextColumn get syncId => text()();
+  RealColumn get amount => real()();
+  TextColumn get type => text()();
+  TextColumn get category => text()();
+  TextColumn get note => text().withDefault(const Constant(''))();
+  TextColumn get frequency => text()(); // 'weekly' or 'monthly'
+  DateTimeColumn get startDate => dateTime()();
+
+  // Sync columns
+  IntColumn get updatedAt => integer().withDefault(const Constant(0))();
+  BoolColumn get deleted => boolean().withDefault(const Constant(false))();
+  BoolColumn get dirty => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column> get primaryKey => {syncId};
+}
+
+@DriftDatabase(tables: [Transactions, Budgets, RecurringRules])
 class AppDatabase extends _$AppDatabase {
   AppDatabase({String userId = 'guest'})
     : super(driftDatabase(name: 'spendly_$userId'));
@@ -43,7 +62,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -73,6 +92,9 @@ class AppDatabase extends _$AppDatabase {
           );
         }
         await update(budgets).write(BudgetsCompanion(updatedAt: Value(now)));
+      }
+      if (from < 4) {
+        await m.createTable(recurringRules);
       }
     },
   );
