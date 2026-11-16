@@ -6,9 +6,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com), versioning follo
 ## [Unreleased]
 
 ### Added
-- Search, filter and sort for transactions
+- Search, filter (type, categories, date range) and sort for transactions
 
-## [1.0.0] - 2026-10-28
+## [1.0.0] - 2026-11-16
 
 ### Added
 - Email/password sign-in with email verification and password reset
