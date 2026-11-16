@@ -1,18 +1,42 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../budgets/presentation/budgets_screen.dart';
+import '../recurring/application/recurring_provider.dart';
 import '../reports/presentation/reports_screen.dart';
 import '../transactions/presentation/home_screen.dart';
-import '../budgets/presentation/budgets_screen.dart';
 
-class MainShell extends StatefulWidget {
+class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends ConsumerState<MainShell>
+    with WidgetsBindingObserver {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _runRecurring());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _runRecurring();
+  }
+
+  void _runRecurring() {
+    ref.read(recurringRunnerProvider).run();
+  }
 
   @override
   Widget build(BuildContext context) {
