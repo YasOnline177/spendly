@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'remote_store.dart';
 
 class FirestoreRemoteStore implements RemoteStore {
@@ -19,12 +20,16 @@ class FirestoreRemoteStore implements RemoteStore {
   CollectionReference<Map<String, dynamic>> get _budgets =>
       _db.collection('users').doc(_uid).collection('budgets');
 
+  CollectionReference<Map<String, dynamic>> get _recurringRules =>
+      _db.collection('users').doc(_uid).collection('recurringRules');
+
   @override
   Future<List<RemoteTransaction>> fetchTransactions() {
     return _run(() async {
       // Source.server fails fast when offline instead of returning stale cache.
-      final snap =
-          await _transactions.get(const GetOptions(source: Source.server));
+      final snap = await _transactions.get(
+        const GetOptions(source: Source.server),
+      );
       return snap.docs.map((d) {
         final m = d.data();
         return RemoteTransaction(
@@ -90,6 +95,52 @@ class FirestoreRemoteStore implements RemoteStore {
             'monthlyLimit': b.monthlyLimit,
             'updatedAt': b.updatedAt,
             'deleted': b.deleted,
+          });
+        }
+        await batch.commit();
+      }
+    });
+  }
+
+  @override
+  Future<List<RemoteRecurringRule>> fetchRecurringRules() {
+    return _run(() async {
+      final snap = await _recurringRules.get(
+        const GetOptions(source: Source.server),
+      );
+      return snap.docs.map((d) {
+        final m = d.data();
+        return RemoteRecurringRule(
+          syncId: d.id,
+          amount: (m['amount'] as num).toDouble(),
+          type: m['type'] as String,
+          category: m['category'] as String,
+          note: (m['note'] as String?) ?? '',
+          frequency: m['frequency'] as String,
+          startDay: (m['startDay'] as num).toInt(),
+          updatedAt: (m['updatedAt'] as num).toInt(),
+          deleted: (m['deleted'] as bool?) ?? false,
+        );
+      }).toList();
+    });
+  }
+
+  @override
+  Future<void> pushRecurringRules(List<RemoteRecurringRule> items) {
+    return _run(() async {
+      for (var i = 0; i < items.length; i += _batchSize) {
+        final chunk = items.sublist(i, min(i + _batchSize, items.length));
+        final batch = _db.batch();
+        for (final r in chunk) {
+          batch.set(_recurringRules.doc(r.syncId), {
+            'amount': r.amount,
+            'type': r.type,
+            'category': r.category,
+            'note': r.note,
+            'frequency': r.frequency,
+            'startDay': r.startDay,
+            'updatedAt': r.updatedAt,
+            'deleted': r.deleted,
           });
         }
         await batch.commit();

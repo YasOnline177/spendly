@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../data/sync/firestore_remote_store.dart';
 import '../../../data/sync/remote_store.dart';
 import '../../../data/sync/sync_service.dart';
 import '../../auth/application/auth_provider.dart';
 import '../../budgets/application/budgets_provider.dart';
 import '../../transactions/application/transactions_provider.dart';
+import '../../recurring/application/recurring_provider.dart';
 
 /// The cloud, or null when nobody is signed in with a verified email.
 final remoteStoreProvider = Provider<RemoteStore?>((ref) {
@@ -30,11 +32,7 @@ class SyncState {
   final DateTime? lastSynced;
   final String? error;
 
-  const SyncState({
-    this.status = SyncStatus.idle,
-    this.lastSynced,
-    this.error,
-  });
+  const SyncState({this.status = SyncStatus.idle, this.lastSynced, this.error});
 }
 
 class SyncController extends Notifier<SyncState> {
@@ -76,11 +74,16 @@ class SyncController extends Notifier<SyncState> {
     state = SyncState(status: SyncStatus.syncing, lastSynced: state.lastSynced);
 
     try {
+      // Create anything that is due first, so it is uploaded in this sync.
+      await ref.read(recurringRunnerProvider).run();
       await service.sync();
       if (_disposed) return;
+      // Rules that just arrived from another device may already be due.
+      await ref.read(recurringRunnerProvider).run();
       // Refresh what's on screen with whatever the sync brought in.
       await ref.read(transactionsProvider.notifier).reload();
       await ref.read(budgetsProvider.notifier).reload();
+      ref.invalidate(recurringRulesProvider);
       state = SyncState(lastSynced: DateTime.now());
     } on SyncFailure catch (e) {
       if (!_disposed) {
@@ -109,5 +112,6 @@ class SyncController extends Notifier<SyncState> {
   }
 }
 
-final syncControllerProvider =
-    NotifierProvider<SyncController, SyncState>(SyncController.new);
+final syncControllerProvider = NotifierProvider<SyncController, SyncState>(
+  SyncController.new,
+);

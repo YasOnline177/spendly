@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../../core/constants/categories.dart';
 import '../../../data/models/transaction.dart';
 import '../application/transactions_provider.dart';
+import '../../../data/recurring/recurrence.dart';
+import '../../recurring/application/recurring_provider.dart';
+
+enum _Repeat { never, weekly, monthly }
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   const AddTransactionScreen({super.key, this.existing});
@@ -24,6 +29,27 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   late TransactionType _type;
   late String _category;
   late DateTime _date;
+
+  _Repeat _repeat = _Repeat.never;
+
+  Frequency? get _frequency => switch (_repeat) {
+    _Repeat.never => null,
+    _Repeat.weekly => Frequency.weekly,
+    _Repeat.monthly => Frequency.monthly,
+  };
+
+  String get _repeatHint {
+    switch (_repeat) {
+      case _Repeat.never:
+        return '';
+      case _Repeat.weekly:
+        return 'Repeats every ${DateFormat('EEEE').format(_date)}.';
+      case _Repeat.monthly:
+        return _date.day > 28
+            ? 'Repeats monthly on day ${_date.day} (the last day in shorter months).'
+            : 'Repeats monthly on day ${_date.day}.';
+    }
+  }
 
   bool get _isEditing => widget.existing != null;
 
@@ -51,29 +77,53 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   }
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
       initialDate: _date,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: _repeat == _Repeat.never
+          ? now
+          : now.add(const Duration(days: 365)),
     );
     if (picked != null) setState(() => _date = picked);
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    ref.read(transactionsProvider.notifier).add(
-          AppTransaction(
-            id: widget.existing?.id ?? 0, // 0 = new, the database assigns an id
-            amount: double.parse(_amountCtrl.text),
+    final amount = double.parse(_amountCtrl.text);
+    final note = _noteCtrl.text.trim();
+
+    if (_frequency != null && !_isEditing) {
+      // The rule creates the transactions (the first one right away if due).
+      await ref
+          .read(recurringRulesProvider.notifier)
+          .create(
+            amount: amount,
             type: _type,
             category: _category,
-            note: _noteCtrl.text.trim(),
-            date: _date,
-          ),
-        );
-    Navigator.pop(context);
+            note: note,
+            frequency: _frequency!,
+            startDate: _date,
+          );
+    } else {
+      ref
+          .read(transactionsProvider.notifier)
+          .add(
+            AppTransaction(
+              id:
+                  widget.existing?.id ??
+                  0, // 0 = new, the database assigns an id
+              amount: amount,
+              type: _type,
+              category: _category,
+              note: note,
+              date: _date,
+            ),
+          );
+    }
+    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -109,8 +159,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
               ],
@@ -158,6 +209,37 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: _pickDate,
             ),
+            if (!_isEditing) ...[
+              const SizedBox(height: 12),
+              Text('Repeat', style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 8),
+              SegmentedButton<_Repeat>(
+                segments: const [
+                  ButtonSegment(value: _Repeat.never, label: Text('Never')),
+                  ButtonSegment(value: _Repeat.weekly, label: Text('Weekly')),
+                  ButtonSegment(value: _Repeat.monthly, label: Text('Monthly')),
+                ],
+                selected: {_repeat},
+                onSelectionChanged: (s) => setState(() {
+                  _repeat = s.first;
+                  // The date picker only allows future dates for repeats.
+                  if (_repeat == _Repeat.never &&
+                      _date.isAfter(DateTime.now())) {
+                    _date = DateTime.now();
+                  }
+                }),
+              ),
+              if (_repeat != _Repeat.never)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _repeatHint,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                ),
+            ],
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _save,

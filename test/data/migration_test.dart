@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spendly_android/data/database/app_database.dart';
 
 void main() {
-  test('migrating v2 to v3 keeps data and adds sync metadata', () async {
+  test('migrating an old v2 database to the latest schema keeps data', () async {
     // Build a database exactly as schema v2 left it.
     final db = AppDatabase.forTesting(
       NativeDatabase.memory(
@@ -46,6 +46,9 @@ void main() {
     expect(budgets.single.monthlyLimit, 5000);
     expect(budgets.single.updatedAt, greaterThan(0));
     expect(budgets.single.dirty, isTrue);
+
+    // The recurring rules table (added in v4) exists and is empty.
+    expect(await db.select(db.recurringRules).get(), isEmpty);
 
     await db.close();
   });

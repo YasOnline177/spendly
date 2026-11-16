@@ -34,11 +34,37 @@ class RemoteBudget {
   });
 }
 
+class RemoteRecurringRule {
+  final String syncId;
+  final double amount;
+  final String type;
+  final String category;
+  final String note;
+  final String frequency;
+  final int startDay; // yyyymmdd, for example 20261015
+  final int updatedAt;
+  final bool deleted;
+
+  const RemoteRecurringRule({
+    required this.syncId,
+    required this.amount,
+    required this.type,
+    required this.category,
+    required this.note,
+    required this.frequency,
+    required this.startDay,
+    required this.updatedAt,
+    required this.deleted,
+  });
+}
+
 abstract class RemoteStore {
   Future<List<RemoteTransaction>> fetchTransactions();
   Future<List<RemoteBudget>> fetchBudgets();
   Future<void> pushTransactions(List<RemoteTransaction> items);
   Future<void> pushBudgets(List<RemoteBudget> items);
+  Future<List<RemoteRecurringRule>> fetchRecurringRules();
+  Future<void> pushRecurringRules(List<RemoteRecurringRule> items);
 }
 
 /// A user-friendly sync error, safe to show on screen.

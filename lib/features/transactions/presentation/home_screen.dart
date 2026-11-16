@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/transaction.dart';
@@ -11,6 +12,7 @@ import '../application/transactions_provider.dart';
 import 'add_transaction_screen.dart';
 import 'widgets/filter_sheet.dart';
 import 'widgets/summary_card.dart';
+import '../../recurring/presentation/recurring_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -27,6 +29,14 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Spendly'),
         actions: [
+          IconButton(
+            tooltip: 'Recurring transactions',
+            icon: const Icon(Icons.event_repeat),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RecurringScreen()),
+            ),
+          ),
           IconButton(
             tooltip: 'Sync now',
             onPressed: sync.status == SyncStatus.syncing
@@ -72,7 +82,8 @@ class HomeScreen extends ConsumerWidget {
                       : const _EmptyState(
                           icon: Icons.search_off,
                           title: 'No matching transactions',
-                          subtitle: 'Try a different search or clear the filters',
+                          subtitle:
+                              'Try a different search or clear the filters',
                         );
                 }
                 return ListView.builder(
@@ -246,8 +257,7 @@ class _TransactionTile extends ConsumerWidget {
               duration: const Duration(seconds: 4),
               action: SnackBarAction(
                 label: 'Undo',
-                onPressed: () =>
-                    ref.read(transactionsProvider.notifier).add(t),
+                onPressed: () => ref.read(transactionsProvider.notifier).add(t),
               ),
             ),
           );
@@ -378,9 +388,8 @@ class _SyncStatusLine extends ConsumerWidget {
         alignment: Alignment.centerLeft,
         child: Text(
           text,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: isError ? scheme.error : scheme.outline,
-              ),
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: isError ? scheme.error : scheme.outline),
         ),
       ),
     );
