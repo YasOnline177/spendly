@@ -6,6 +6,20 @@ class FakeRemoteStore implements RemoteStore {
   final budgets = <String, RemoteBudget>{};
   int pushedTransactions = 0;
   int pushedBudgets = 0;
+  final recurringRules = <String, RemoteRecurringRule>{};
+  int pushedRecurringRules = 0;
+
+  @override
+  Future<List<RemoteRecurringRule>> fetchRecurringRules() async =>
+      recurringRules.values.toList();
+
+  @override
+  Future<void> pushRecurringRules(List<RemoteRecurringRule> items) async {
+    for (final r in items) {
+      recurringRules[r.syncId] = r;
+      pushedRecurringRules++;
+    }
+  }
 
   @override
   Future<List<RemoteTransaction>> fetchTransactions() async =>
