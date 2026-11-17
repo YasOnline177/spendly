@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/budget.dart';
 import '../application/budget_calculations.dart';
 import '../application/budgets_provider.dart';
+import '../../alerts/application/alert_provider.dart';
 
 class BudgetsScreen extends ConsumerWidget {
   const BudgetsScreen({super.key});
@@ -14,9 +16,25 @@ class BudgetsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progress = ref.watch(budgetProgressProvider);
+    final alertsOn = ref.watch(alertSettingsProvider).value ?? true;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Budgets')),
+      appBar: AppBar(
+        title: const Text('Budgets'),
+        actions: [
+          IconButton(
+            tooltip: alertsOn
+                ? 'Budget alerts are on'
+                : 'Budget alerts are off',
+            icon: Icon(
+              alertsOn
+                  ? Icons.notifications_active_outlined
+                  : Icons.notifications_off_outlined,
+            ),
+            onPressed: () => _toggleAlerts(context, ref, !alertsOn),
+          ),
+        ],
+      ),
       body: progress.isEmpty
           ? const _EmptyBudgets()
           : ListView(
@@ -226,9 +244,12 @@ class _BudgetSheetState extends ConsumerState<_BudgetSheet> {
   void _save() {
     if (!_formKey.currentState!.validate()) return;
 
-    ref.read(budgetsProvider.notifier).upsert(
+    ref
+        .read(budgetsProvider.notifier)
+        .upsert(
           Budget(category: _category, limit: double.parse(_amountCtrl.text)),
         );
+        ref.read(alertSettingsProvider.notifier).askPermissionOnce();
     Navigator.pop(context);
   }
 
@@ -268,8 +289,9 @@ class _BudgetSheetState extends ConsumerState<_BudgetSheet> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
               ],
@@ -301,4 +323,24 @@ class _BudgetSheetState extends ConsumerState<_BudgetSheet> {
       ),
     );
   }
+}
+
+Future<void> _toggleAlerts(
+  BuildContext context,
+  WidgetRef ref,
+  bool enable,
+) async {
+  final granted =
+      await ref.read(alertSettingsProvider.notifier).setEnabled(enable);
+  if (!context.mounted) return;
+
+  final message = !enable
+      ? 'Budget alerts turned off'
+      : granted
+          ? 'You will be notified at 80% and 100% of a budget'
+          : 'Alerts are on, but notifications are blocked. Allow them in your phone settings.';
+
+  ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(SnackBar(content: Text(message)));
 }

@@ -8,6 +8,7 @@ import '../../../data/repositories/drift_recurring_rule_repository.dart';
 import '../../../data/repositories/recurring_rule_repository.dart';
 import '../../sync/application/sync_provider.dart';
 import '../../transactions/application/transactions_provider.dart';
+import '../../alerts/application/alert_provider.dart';
 
 final recurringRuleRepositoryProvider = Provider<RecurringRuleRepository>(
   (ref) => DriftRecurringRuleRepository(ref.watch(databaseProvider)),
@@ -35,6 +36,7 @@ class RecurringRunner {
     if (created > 0) {
       await _ref.read(transactionsProvider.notifier).reload();
       _ref.read(syncControllerProvider.notifier).requestSync();
+      _ref.read(alertControllerProvider).check();
     }
     return created;
   }

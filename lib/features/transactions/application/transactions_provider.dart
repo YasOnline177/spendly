@@ -6,6 +6,7 @@ import '../../../data/repositories/drift_transaction_repository.dart';
 import '../../../data/repositories/transaction_repository.dart';
 import '../../auth/application/auth_provider.dart';
 import '../../sync/application/sync_provider.dart';
+import '../../alerts/application/alert_provider.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
   final uid = ref.watch(currentUserIdProvider);
@@ -37,6 +38,7 @@ class TransactionsNotifier extends AsyncNotifier<List<AppTransaction>> {
     await _repo.add(t);
     state = AsyncData(await _repo.getAll());
     ref.read(syncControllerProvider.notifier).requestSync();
+    ref.read(alertControllerProvider).check();
   }
 
   Future<void> remove(int id) async {
