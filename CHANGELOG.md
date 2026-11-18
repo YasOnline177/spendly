@@ -14,6 +14,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com), versioning follo
 - Recurring screen to view upcoming repeats and delete rules
 - Missed repeats are created automatically when the app opens, including after time away
 - Recurring rules sync across devices without creating duplicate transactions
+- Budget alerts: a notification at 80% and again at 100% of a monthly budget, sent once per category per month
+- Bell button on the Budgets screen to turn budget alerts on or off
 
 ### Changed
 - Database upgraded to schema v4 (existing data is preserved)
