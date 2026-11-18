@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../auth/application/auth_provider.dart';
 import '../../budgets/application/budgets_provider.dart';
 import '../data/alert_store.dart';
@@ -73,20 +74,51 @@ class AlertSettingsNotifier extends AsyncNotifier<bool> {
     await ref.read(alertStoreProvider).setEnabled(enabled);
     state = AsyncData(enabled);
     if (!enabled) return true;
-    return ref.read(notificationServiceProvider).requestPermission();
+    return _requestPermission();
   }
 
   /// Asks for the system permission the first time a budget is saved.
+  /// Only remembers that it asked if the request really went through.
   Future<void> askPermissionOnce() async {
     if (!await future) return;
     final store = ref.read(alertStoreProvider);
     if (await store.permissionAsked()) return;
-    await store.setPermissionAsked();
-    await ref.read(notificationServiceProvider).requestPermission();
+
+    try {
+      await ref.read(notificationServiceProvider).requestPermission();
+      await store.setPermissionAsked();
+    } catch (e, st) {
+      debugPrint('Notification permission request failed: $e\n$st');
+    }
+  }
+
+  /// Shows a notification right now, to check alerts work on this phone.
+  Future<bool> sendTestNotification() async {
+    try {
+      final service = ref.read(notificationServiceProvider);
+      await service.requestPermission();
+      return await service.show(
+        id: 1,
+        title: 'Spendly',
+        body: 'Budget alerts are working.',
+      );
+    } catch (e, st) {
+      debugPrint('Test notification failed: $e\n$st');
+      return false;
+    }
+  }
+
+  Future<bool> _requestPermission() async {
+    try {
+      return await ref.read(notificationServiceProvider).requestPermission();
+    } catch (e, st) {
+      debugPrint('Notification permission request failed: $e\n$st');
+      return false;
+    }
   }
 }
 
 final alertSettingsProvider =
     AsyncNotifierProvider<AlertSettingsNotifier, bool>(
-  AlertSettingsNotifier.new,
-);
+      AlertSettingsNotifier.new,
+    );

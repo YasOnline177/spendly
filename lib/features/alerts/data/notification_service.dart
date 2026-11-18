@@ -16,17 +16,24 @@ class LocalNotificationService implements NotificationService {
   final _plugin = FlutterLocalNotificationsPlugin();
   Future<bool?>? _initialized;
 
-  Future<bool?> _ensureInitialized() {
-    return _initialized ??= _plugin.initialize(
-      settings: const InitializationSettings(
-        android: AndroidInitializationSettings('ic_stat_spendly'),
-      ),
-    );
+  Future<void> _ensureInitialized() async {
+    try {
+      _initialized ??= _plugin.initialize(
+        settings: const InitializationSettings(
+          android: AndroidInitializationSettings('ic_stat_spendly'),
+        ),
+      );
+      await _initialized;
+    } catch (_) {
+      _initialized = null; // try again next time instead of failing forever
+      rethrow;
+    }
   }
 
   AndroidFlutterLocalNotificationsPlugin? get _android => _plugin
       .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+        AndroidFlutterLocalNotificationsPlugin
+      >();
 
   @override
   Future<bool> requestPermission() async {

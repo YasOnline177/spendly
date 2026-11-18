@@ -51,9 +51,11 @@ void main() {
     });
 
     test('sends "reached" later, and never repeats it', () async {
-      await _container(spent: 4200, store: store, service: service)
-          .read(alertControllerProvider)
-          .check();
+      await _container(
+        spent: 4200,
+        store: store,
+        service: service,
+      ).read(alertControllerProvider).check();
 
       final later = _container(spent: 5100, store: store, service: service);
       await later.read(alertControllerProvider).check();
@@ -111,8 +113,7 @@ void main() {
     }
 
     test('asks for notification permission only once', () async {
-      final notifier =
-          settingsContainer().read(alertSettingsProvider.notifier);
+      final notifier = settingsContainer().read(alertSettingsProvider.notifier);
 
       await notifier.askPermissionOnce();
       await notifier.askPermissionOnce();
@@ -123,8 +124,7 @@ void main() {
     test('turning alerts on reports a denied permission', () async {
       store.enabled = false;
       service.permissionGranted = false;
-      final notifier =
-          settingsContainer().read(alertSettingsProvider.notifier);
+      final notifier = settingsContainer().read(alertSettingsProvider.notifier);
 
       final granted = await notifier.setEnabled(true);
 
@@ -133,13 +133,39 @@ void main() {
     });
 
     test('turning alerts off does not ask for permission', () async {
-      final notifier =
-          settingsContainer().read(alertSettingsProvider.notifier);
+      final notifier = settingsContainer().read(alertSettingsProvider.notifier);
 
       await notifier.setEnabled(false);
 
       expect(store.enabled, isFalse);
       expect(service.permissionRequests, 0);
+    });
+
+    test('asks again next time if the permission request failed', () async {
+      final notifier = settingsContainer().read(alertSettingsProvider.notifier);
+
+      service.failPermission = true;
+      await notifier.askPermissionOnce();
+      expect(store.asked, isFalse);
+
+      service.failPermission = false;
+      await notifier.askPermissionOnce();
+      expect(store.asked, isTrue);
+      expect(service.permissionRequests, 2);
+    });
+
+    test('a test notification is shown right away', () async {
+      final notifier = settingsContainer().read(alertSettingsProvider.notifier);
+
+      expect(await notifier.sendTestNotification(), isTrue);
+      expect(service.shown.single.body, 'Budget alerts are working.');
+    });
+
+    test('a test notification reports when it could not be shown', () async {
+      service.deliver = false;
+      final notifier = settingsContainer().read(alertSettingsProvider.notifier);
+
+      expect(await notifier.sendTestNotification(), isFalse);
     });
   });
 }

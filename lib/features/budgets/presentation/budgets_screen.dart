@@ -22,16 +22,26 @@ class BudgetsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Budgets'),
         actions: [
-          IconButton(
-            tooltip: alertsOn
-                ? 'Budget alerts are on'
-                : 'Budget alerts are off',
+          PopupMenuButton<String>(
+            tooltip: 'Budget alerts',
             icon: Icon(
               alertsOn
                   ? Icons.notifications_active_outlined
                   : Icons.notifications_off_outlined,
             ),
-            onPressed: () => _toggleAlerts(context, ref, !alertsOn),
+            onSelected: (value) => value == 'toggle'
+                ? _toggleAlerts(context, ref, !alertsOn)
+                : _sendTest(context, ref),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'toggle',
+                child: Text(alertsOn ? 'Turn alerts off' : 'Turn alerts on'),
+              ),
+              const PopupMenuItem(
+                value: 'test',
+                child: Text('Send a test notification'),
+              ),
+            ],
           ),
         ],
       ),
@@ -249,7 +259,7 @@ class _BudgetSheetState extends ConsumerState<_BudgetSheet> {
         .upsert(
           Budget(category: _category, limit: double.parse(_amountCtrl.text)),
         );
-        ref.read(alertSettingsProvider.notifier).askPermissionOnce();
+    ref.read(alertSettingsProvider.notifier).askPermissionOnce();
     Navigator.pop(context);
   }
 
@@ -330,17 +340,34 @@ Future<void> _toggleAlerts(
   WidgetRef ref,
   bool enable,
 ) async {
-  final granted =
-      await ref.read(alertSettingsProvider.notifier).setEnabled(enable);
+  final granted = await ref
+      .read(alertSettingsProvider.notifier)
+      .setEnabled(enable);
   if (!context.mounted) return;
 
   final message = !enable
       ? 'Budget alerts turned off'
       : granted
-          ? 'You will be notified at 80% and 100% of a budget'
-          : 'Alerts are on, but notifications are blocked. Allow them in your phone settings.';
+      ? 'You will be notified at 80% and 100% of a budget'
+      : 'Alerts are on, but notifications are blocked. Allow them in your phone settings.';
 
   ScaffoldMessenger.of(context)
     ..clearSnackBars()
     ..showSnackBar(SnackBar(content: Text(message)));
+}
+
+Future<void> _sendTest(BuildContext context, WidgetRef ref) async {
+  final ok =
+      await ref.read(alertSettingsProvider.notifier).sendTestNotification();
+  if (!context.mounted || ok) return;
+
+  ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Could not show a notification. Check that notifications are allowed for Spendly in your phone settings.',
+        ),
+      ),
+    );
 }

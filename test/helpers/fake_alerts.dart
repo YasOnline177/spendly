@@ -28,6 +28,7 @@ class FakeAlertStore implements AlertStore {
 class FakeNotificationService implements NotificationService {
   bool deliver = true;
   bool permissionGranted = true;
+  bool failPermission = false;
   int permissionRequests = 0;
   int attempts = 0;
   final shown = <({int id, String title, String body})>[];
@@ -35,6 +36,7 @@ class FakeNotificationService implements NotificationService {
   @override
   Future<bool> requestPermission() async {
     permissionRequests++;
+    if (failPermission) throw StateError('permission request failed');
     return permissionGranted;
   }
 
