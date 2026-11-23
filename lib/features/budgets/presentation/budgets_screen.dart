@@ -357,17 +357,14 @@ Future<void> _toggleAlerts(
 }
 
 Future<void> _sendTest(BuildContext context, WidgetRef ref) async {
-  final ok =
-      await ref.read(alertSettingsProvider.notifier).sendTestNotification();
-  if (!context.mounted || ok) return;
+  final problem = await ref
+      .read(alertSettingsProvider.notifier)
+      .sendTestNotification();
+  if (!context.mounted || problem == null) return;
 
   ScaffoldMessenger.of(context)
     ..clearSnackBars()
     ..showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Could not show a notification. Check that notifications are allowed for Spendly in your phone settings.',
-        ),
-      ),
+      SnackBar(content: Text(problem), duration: const Duration(seconds: 10)),
     );
 }

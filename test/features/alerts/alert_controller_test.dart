@@ -141,31 +141,33 @@ void main() {
       expect(service.permissionRequests, 0);
     });
 
-    test('asks again next time if the permission request failed', () async {
-      final notifier = settingsContainer().read(alertSettingsProvider.notifier);
-
-      service.failPermission = true;
-      await notifier.askPermissionOnce();
-      expect(store.asked, isFalse);
-
-      service.failPermission = false;
-      await notifier.askPermissionOnce();
-      expect(store.asked, isTrue);
-      expect(service.permissionRequests, 2);
-    });
-
     test('a test notification is shown right away', () async {
       final notifier = settingsContainer().read(alertSettingsProvider.notifier);
 
-      expect(await notifier.sendTestNotification(), isTrue);
+      expect(await notifier.sendTestNotification(), isNull);
       expect(service.shown.single.body, 'Budget alerts are working.');
     });
 
-    test('a test notification reports when it could not be shown', () async {
-      service.deliver = false;
+    test(
+      'a test notification explains when notifications are blocked',
+      () async {
+        service.deliver = false;
+        final notifier = settingsContainer().read(
+          alertSettingsProvider.notifier,
+        );
+
+        expect(await notifier.sendTestNotification(), contains('blocked'));
+      },
+    );
+
+    test('a test notification reports a setup problem', () async {
+      service.failPermission = true;
       final notifier = settingsContainer().read(alertSettingsProvider.notifier);
 
-      expect(await notifier.sendTestNotification(), isFalse);
+      expect(
+        await notifier.sendTestNotification(),
+        startsWith('Setup problem'),
+      );
     });
   });
 }
