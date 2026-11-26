@@ -22,26 +22,16 @@ class BudgetsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Budgets'),
         actions: [
-          PopupMenuButton<String>(
-            tooltip: 'Budget alerts',
+          IconButton(
+            tooltip: alertsOn
+                ? 'Budget alerts are on'
+                : 'Budget alerts are off',
             icon: Icon(
               alertsOn
                   ? Icons.notifications_active_outlined
                   : Icons.notifications_off_outlined,
             ),
-            onSelected: (value) => value == 'toggle'
-                ? _toggleAlerts(context, ref, !alertsOn)
-                : _sendTest(context, ref),
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'toggle',
-                child: Text(alertsOn ? 'Turn alerts off' : 'Turn alerts on'),
-              ),
-              const PopupMenuItem(
-                value: 'test',
-                child: Text('Send a test notification'),
-              ),
-            ],
+            onPressed: () => _toggleAlerts(context, ref, !alertsOn),
           ),
         ],
       ),
@@ -354,17 +344,4 @@ Future<void> _toggleAlerts(
   ScaffoldMessenger.of(context)
     ..clearSnackBars()
     ..showSnackBar(SnackBar(content: Text(message)));
-}
-
-Future<void> _sendTest(BuildContext context, WidgetRef ref) async {
-  final problem = await ref
-      .read(alertSettingsProvider.notifier)
-      .sendTestNotification();
-  if (!context.mounted || problem == null) return;
-
-  ScaffoldMessenger.of(context)
-    ..clearSnackBars()
-    ..showSnackBar(
-      SnackBar(content: Text(problem), duration: const Duration(seconds: 10)),
-    );
 }

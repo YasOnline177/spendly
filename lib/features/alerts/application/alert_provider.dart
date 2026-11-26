@@ -94,23 +94,6 @@ class AlertSettingsNotifier extends AsyncNotifier<bool> {
 
   /// Shows a notification right now. Returns null on success, otherwise a
   /// message explaining what went wrong.
-  Future<String?> sendTestNotification() async {
-    try {
-      final service = ref.read(notificationServiceProvider);
-      await service.requestPermission();
-      final shown = await service.show(
-        id: 1,
-        title: 'Spendly',
-        body: 'Budget alerts are working.',
-      );
-      return shown
-          ? null
-          : 'Notifications are blocked for Spendly. Open your phone settings, then Apps, Spendly, Notifications, and turn them on.';
-    } catch (e, st) {
-      debugPrint('Test notification failed: $e\n$st');
-      return 'Setup problem: $e';
-    }
-  }
 
   Future<bool> _requestPermission() async {
     try {

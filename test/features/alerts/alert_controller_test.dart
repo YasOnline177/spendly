@@ -140,34 +140,5 @@ void main() {
       expect(store.enabled, isFalse);
       expect(service.permissionRequests, 0);
     });
-
-    test('a test notification is shown right away', () async {
-      final notifier = settingsContainer().read(alertSettingsProvider.notifier);
-
-      expect(await notifier.sendTestNotification(), isNull);
-      expect(service.shown.single.body, 'Budget alerts are working.');
-    });
-
-    test(
-      'a test notification explains when notifications are blocked',
-      () async {
-        service.deliver = false;
-        final notifier = settingsContainer().read(
-          alertSettingsProvider.notifier,
-        );
-
-        expect(await notifier.sendTestNotification(), contains('blocked'));
-      },
-    );
-
-    test('a test notification reports a setup problem', () async {
-      service.failPermission = true;
-      final notifier = settingsContainer().read(alertSettingsProvider.notifier);
-
-      expect(
-        await notifier.sendTestNotification(),
-        startsWith('Setup problem'),
-      );
-    });
   });
 }
