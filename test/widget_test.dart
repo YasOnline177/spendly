@@ -10,11 +10,12 @@ import 'package:spendly_android/data/repositories/budget_repository.dart';
 import 'package:spendly_android/features/budgets/application/budgets_provider.dart';
 import 'package:spendly_android/data/models/app_user.dart';
 import 'package:spendly_android/features/auth/application/auth_provider.dart';
-
-import 'helpers/fake_auth_repository.dart';
-
 import 'package:spendly_android/features/sync/application/sync_provider.dart';
 import 'package:spendly_android/features/recurring/application/recurring_provider.dart';
+import 'package:spendly_android/features/alerts/application/alert_provider.dart';
+
+import 'helpers/fake_auth_repository.dart';
+import 'helpers/fake_alerts.dart';
 
 class FakeTransactionRepository implements TransactionRepository {
   final _items = <AppTransaction>[];
@@ -78,7 +79,8 @@ void main() {
           ),
           dueGeneratorProvider.overrideWithValue(
             (now) async => 0,
-          ), // no real database
+          ),
+          alertStoreProvider.overrideWithValue(FakeAlertStore()), // no real database
         ],
         child: const SpendlyApp(),
       ),

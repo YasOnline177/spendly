@@ -6,6 +6,7 @@ import '../../../data/repositories/drift_budget_repository.dart';
 import '../../transactions/application/transactions_provider.dart';
 import 'budget_calculations.dart';
 import '../../sync/application/sync_provider.dart';
+import '../../alerts/application/alert_provider.dart';
 
 final budgetRepositoryProvider = Provider<BudgetRepository>(
   (ref) => DriftBudgetRepository(ref.watch(databaseProvider)),
@@ -29,6 +30,7 @@ class BudgetsNotifier extends Notifier<List<Budget>> {
     await _repo.upsert(budget);
     await reload();
     ref.read(syncControllerProvider.notifier).requestSync();
+    ref.read(alertControllerProvider).check();
   }
 
   Future<void> remove(String category) async {
