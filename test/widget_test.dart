@@ -13,7 +13,9 @@ import 'package:spendly_android/features/auth/application/auth_provider.dart';
 import 'package:spendly_android/features/sync/application/sync_provider.dart';
 import 'package:spendly_android/features/recurring/application/recurring_provider.dart';
 import 'package:spendly_android/features/alerts/application/alert_provider.dart';
+import 'package:spendly_android/features/lock/application/app_lock_provider.dart';
 
+import 'helpers/fake_lock.dart';
 import 'helpers/fake_auth_repository.dart';
 import 'helpers/fake_alerts.dart';
 
@@ -77,10 +79,14 @@ void main() {
               ),
             ),
           ),
-          dueGeneratorProvider.overrideWithValue(
-            (now) async => 0,
+          dueGeneratorProvider.overrideWithValue((now) async => 0),
+          alertStoreProvider.overrideWithValue(
+            FakeAlertStore(),
+          ), // no real database
+          appLockStoreProvider.overrideWithValue(FakeAppLockStore()),
+          biometricAuthenticatorProvider.overrideWithValue(
+            FakeBiometricAuthenticator(),
           ),
-          alertStoreProvider.overrideWithValue(FakeAlertStore()), // no real database
         ],
         child: const SpendlyApp(),
       ),

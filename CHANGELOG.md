@@ -16,9 +16,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com), versioning follo
 - Recurring rules sync across devices without creating duplicate transactions
 - Budget alerts: a notification at 80% and again at 100% of a monthly budget, sent once per category per month
 - Bell button on the Budgets screen to turn budget alerts on or off
+- App lock: unlock with fingerprint, face or the phone's PIN when the app opens and after 30 seconds in the background
+- App lock can be turned on or off from the menu on the Home screen
 
 ### Changed
 - Database upgraded to schema v4 (existing data is preserved)
+- Sign out moved into the menu on the Home screen
 
 ## [1.0.0] - 2026-10-28
 
