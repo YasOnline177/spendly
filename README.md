@@ -33,6 +33,7 @@ Track income and expenses, set monthly budgets per category, and see where your 
 - **Recurring transactions:** repeat weekly or monthly (rent, salary, subscriptions); missed repeats are created automatically and sync across devices without duplicates
 - **Budget alerts:** a notification when a category reaches 80% and 100% of its monthly budget, once per category per month, with an on/off switch
 - **App lock:** fingerprint, face or phone PIN to open the app, and again after 30 seconds away, with a lock screen that covers every screen
+- **CSV export:** share all transactions, or just the current search results, as a spreadsheet-ready CSV file
 - **Reports:** spending-by-category donut chart with a month picker, and a 6-month income vs. expense bar chart
 - **Offline-first:** everything works without a connection; changes sync automatically when online
 - **Cloud sync:** two-way sync with conflict resolution, plus a manual sync button and status line
@@ -148,7 +149,7 @@ If you change a Drift table, regenerate the database code with `dart run build_r
 
 ## Roadmap
 
-- [ ] CSV export
+- [x] CSV export
 - [x] Recurring transactions
 - [ ] Google sign-in
 - [ ] Server-timestamp sync cursor and cleanup of old deletions
