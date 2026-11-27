@@ -14,7 +14,9 @@ import 'package:spendly_android/features/sync/application/sync_provider.dart';
 import 'package:spendly_android/features/recurring/application/recurring_provider.dart';
 import 'package:spendly_android/features/alerts/application/alert_provider.dart';
 import 'package:spendly_android/features/lock/application/app_lock_provider.dart';
+import 'package:spendly_android/features/export/application/export_service.dart';
 
+import 'helpers/fake_file_sharer.dart';
 import 'helpers/fake_lock.dart';
 import 'helpers/fake_auth_repository.dart';
 import 'helpers/fake_alerts.dart';
@@ -62,6 +64,7 @@ class FakeBudgetRepository implements BudgetRepository {
 void main() {
   WidgetController.hitTestWarningShouldBeFatal = true;
   testWidgets('add a transaction and see it in the list', (tester) async {
+    final sharer = FakeFileSharer();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -87,6 +90,7 @@ void main() {
           biometricAuthenticatorProvider.overrideWithValue(
             FakeBiometricAuthenticator(),
           ),
+          exportServiceProvider.overrideWithValue(ExportService(sharer)),
         ],
         child: const SpendlyApp(),
       ),
@@ -107,5 +111,14 @@ void main() {
     expect(find.text('Save transaction'), findsNothing); // the form closed
     expect(find.text('No transactions yet'), findsNothing);
     expect(find.text('Food'), findsOneWidget);
+
+    // Export the transaction we just added.
+    await tester.tap(find.byTooltip('More'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Export to CSV'));
+    await tester.pumpAndSettle();
+
+    expect(sharer.files, hasLength(1));
+    expect(sharer.files.single.content, contains('Expense,Food,1500.00'));
   });
 }
