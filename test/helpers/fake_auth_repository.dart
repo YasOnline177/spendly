@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:spendly_android/data/models/app_user.dart';
 import 'package:spendly_android/data/repositories/auth_repository.dart';
 
@@ -8,7 +10,16 @@ class FakeAuthRepository implements AuthRepository {
   final AuthFailure? signInError;
 
   @override
-  Stream<AppUser?> authStateChanges() => Stream.value(user);
+  Stream<AppUser?> authStateChanges() {
+    late final StreamController<AppUser?> controller;
+    controller = StreamController<AppUser?>(
+      onListen: () {
+        controller.add(user);
+        controller.close();
+      },
+    );
+    return controller.stream;
+  }
 
   @override
   Future<void> signIn({required String email, required String password}) async {
