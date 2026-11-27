@@ -13,6 +13,7 @@ import 'add_transaction_screen.dart';
 import 'widgets/filter_sheet.dart';
 import 'widgets/summary_card.dart';
 import '../../recurring/presentation/recurring_screen.dart';
+import '../../lock/application/app_lock_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -23,7 +24,7 @@ class HomeScreen extends ConsumerWidget {
     final total = ref.watch(transactionsProvider).value?.length ?? 0;
     final shown = listAsync.value?.length ?? 0;
     final summary = ref.watch(summaryProvider);
-    final sync = ref.watch(syncControllerProvider);
+    final lockEnabled = ref.watch(appLockProvider).value?.enabled ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -37,22 +38,24 @@ class HomeScreen extends ConsumerWidget {
               MaterialPageRoute(builder: (_) => const RecurringScreen()),
             ),
           ),
-          IconButton(
-            tooltip: 'Sync now',
-            onPressed: sync.status == SyncStatus.syncing
-                ? null
-                : () => _syncNow(context, ref),
-            icon: sync.status == SyncStatus.syncing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(
-                    sync.status == SyncStatus.error
-                        ? Icons.sync_problem
-                        : Icons.sync,
-                  ),
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            onSelected: (value) {
+              if (value == 'lock') {
+                _toggleAppLock(context, ref);
+              } else {
+                _confirmSignOut(context, ref);
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'lock',
+                child: Text(
+                  lockEnabled ? 'Turn off app lock' : 'Turn on app lock',
+                ),
+              ),
+              const PopupMenuItem(value: 'signout', child: Text('Sign out')),
+            ],
           ),
           IconButton(
             tooltip: 'Sign out',
@@ -347,16 +350,24 @@ Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
   }
 }
 
-Future<void> _syncNow(BuildContext context, WidgetRef ref) async {
-  await ref.read(syncControllerProvider.notifier).syncNow();
+Future<void> _toggleAppLock(BuildContext context, WidgetRef ref) async {
+  final controller = ref.read(appLockProvider.notifier);
+  final wasEnabled = ref.read(appLockProvider).value?.enabled ?? false;
+
+  final result = wasEnabled
+      ? await controller.disable()
+      : await controller.enable();
   if (!context.mounted) return;
 
-  final s = ref.read(syncControllerProvider);
-  if (s.status == SyncStatus.error) {
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text(s.error ?? 'Sync failed')));
-  }
+  final message = switch (result) {
+    LockChange.done => wasEnabled ? 'App lock is off' : 'App lock is on',
+    LockChange.unsupported => 'Set up a screen lock (PIN, pattern or fingerprint) in your phone settings first',
+    LockChange.failed => 'App lock was not changed',
+  };
+
+  ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(SnackBar(content: Text(message)));
 }
 
 class _SyncStatusLine extends ConsumerWidget {

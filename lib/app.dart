@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/auth_gate.dart';
+import 'features/lock/presentation/app_lock_gate.dart';
+
 class SpendlyApp extends StatelessWidget {
   const SpendlyApp({super.key});
 
@@ -13,6 +16,8 @@ class SpendlyApp extends StatelessWidget {
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
       home: const AuthGate(),
+      builder: (context, child) =>
+          AppLockGate(child: child ?? const SizedBox.shrink()),
     );
   }
 }
