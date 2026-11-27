@@ -14,6 +14,7 @@ import 'widgets/filter_sheet.dart';
 import 'widgets/summary_card.dart';
 import '../../recurring/presentation/recurring_screen.dart';
 import '../../lock/application/app_lock_provider.dart';
+import '../../export/application/export_service.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -25,6 +26,7 @@ class HomeScreen extends ConsumerWidget {
     final shown = listAsync.value?.length ?? 0;
     final summary = ref.watch(summaryProvider);
     final lockEnabled = ref.watch(appLockProvider).value?.enabled ?? false;
+    final filterActive = ref.watch(transactionFilterProvider).isActive;
 
     return Scaffold(
       appBar: AppBar(
@@ -41,13 +43,30 @@ class HomeScreen extends ConsumerWidget {
           PopupMenuButton<String>(
             tooltip: 'More',
             onSelected: (value) {
-              if (value == 'lock') {
-                _toggleAppLock(context, ref);
-              } else {
-                _confirmSignOut(context, ref);
+              switch (value) {
+                case 'export_all':
+                  _exportCsv(context, ref, onlyShown: false);
+                case 'export_shown':
+                  _exportCsv(context, ref, onlyShown: true);
+                case 'lock':
+                  _toggleAppLock(context, ref);
+                default:
+                  _confirmSignOut(context, ref);
               }
             },
             itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'export_all',
+                child: Text(
+                  filterActive ? 'Export all to CSV' : 'Export to CSV',
+                ),
+              ),
+              if (filterActive && shown > 0)
+                PopupMenuItem(
+                  value: 'export_shown',
+                  child: Text('Export $shown shown to CSV'),
+                ),
+              const PopupMenuDivider(),
               PopupMenuItem(
                 value: 'lock',
                 child: Text(
@@ -400,4 +419,30 @@ class _SyncStatusLine extends ConsumerWidget {
       ),
     );
   }
+}
+
+Future<void> _exportCsv(
+  BuildContext context,
+  WidgetRef ref, {
+  required bool onlyShown,
+}) async {
+  final source = onlyShown
+      ? ref.read(filteredTransactionsProvider)
+      : ref.read(transactionsProvider);
+
+  final result = await ref
+      .read(exportServiceProvider)
+      .exportTransactions(source.value ?? [], DateTime.now());
+  if (!context.mounted) return;
+
+  final message = switch (result) {
+    ExportResult.shared => null,
+    ExportResult.empty => 'No transactions to export',
+    ExportResult.failed => 'Could not export. Please try again.',
+  };
+  if (message == null) return;
+
+  ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(SnackBar(content: Text(message)));
 }

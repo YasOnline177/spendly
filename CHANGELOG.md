@@ -18,6 +18,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com), versioning follo
 - Bell button on the Budgets screen to turn budget alerts on or off
 - App lock: unlock with fingerprint, face or the phone's PIN when the app opens and after 30 seconds in the background
 - App lock can be turned on or off from the menu on the Home screen
+- Export transactions to a CSV file from the Home menu, shared through the system share sheet
+- Export only the results of the current search or filter
 
 ### Changed
 - Database upgraded to schema v4 (existing data is preserved)
