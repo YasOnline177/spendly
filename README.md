@@ -32,6 +32,7 @@ Track income and expenses, set monthly budgets per category, and see where your 
 - **Budgets:** monthly limit per category with progress bars that turn orange near the limit and red when exceeded
 - **Recurring transactions:** repeat weekly or monthly (rent, salary, subscriptions); missed repeats are created automatically and sync across devices without duplicates
 - **Budget alerts:** a notification when a category reaches 80% and 100% of its monthly budget, once per category per month, with an on/off switch
+- **App lock:** fingerprint, face or phone PIN to open the app, and again after 30 seconds away, with a lock screen that covers every screen
 - **Reports:** spending-by-category donut chart with a month picker, and a 6-month income vs. expense bar chart
 - **Offline-first:** everything works without a connection; changes sync automatically when online
 - **Cloud sync:** two-way sync with conflict resolution, plus a manual sync button and status line

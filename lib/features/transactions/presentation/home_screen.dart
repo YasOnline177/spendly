@@ -57,11 +57,6 @@ class HomeScreen extends ConsumerWidget {
               const PopupMenuItem(value: 'signout', child: Text('Sign out')),
             ],
           ),
-          IconButton(
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout),
-            onPressed: () => _confirmSignOut(context, ref),
-          ),
         ],
       ),
       body: Column(
