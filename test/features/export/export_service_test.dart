@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spendly_android/data/models/transaction.dart';
 import 'package:spendly_android/features/export/application/export_service.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../helpers/fake_file_sharer.dart';
 
@@ -40,6 +41,10 @@ void main() {
   });
 
   test('reports a failure instead of throwing', () async {
+    final original = debugPrint;
+    debugPrint = (String? message, {int? wrapWidth}) {}; // logged on purpose
+    addTearDown(() => debugPrint = original);
+
     final sharer = FakeFileSharer()..fail = true;
 
     final result = await ExportService(sharer).exportTransactions([_tx()], now);
